@@ -24,7 +24,7 @@ socket.on('loc', (locationMessage) => {
     const html = Mustache.render($locTemplate, {
         locationMessage
     })
-    $msgs.insertAdjacentHTML('beforebegin', html)
+    $msgs.insertAdjacentHTML('beforeend', html)
 })
 
 $form.addEventListener('submit', (e) => {
