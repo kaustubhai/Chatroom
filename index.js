@@ -16,7 +16,11 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 io.on('connect', (socket) => {
     console.log('Socket connected')
-    socket.broadcast.emit('botMsg', convertToMessage('A User connected'))
+
+    socket.on('join', (qs) => {
+        socket.join(qs.roomname)
+        socket.broadcast.to(qs.roomname).emit('recieved', convertToMessage(`${qs.username} has joined the chat`))
+    })
 
     socket.on('newMessage', (message, cb) => {
         const filter = new Filter();
@@ -33,7 +37,7 @@ io.on('connect', (socket) => {
     })
 
     socket.on('disconnect', () => {
-        socket.broadcast.emit('botMsg', convertToMessage('A User disconnected'))
+        socket.broadcast.emit('recieved', convertToMessage('A User disconnected'))
     })
 })
 
