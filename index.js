@@ -4,6 +4,7 @@ const http = require('http');
 const socketio = require('socket.io');
 const Filter = require('bad-words');
 const { convertToMessage } = require('./utils/generateMessages');
+const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
 
 const port = process.env.PORT || 3000
 
@@ -18,6 +19,12 @@ io.on('connect', (socket) => {
     console.log('Socket connected')
 
     socket.on('join', (qs) => {
+        const { user, error } = addUser({ id: socket.id, username, roomname })
+        
+        
+
+
+
         socket.join(qs.roomname)
         socket.broadcast.to(qs.roomname).emit('recieved', convertToMessage(`${qs.username} has joined the chat`))
     })
