@@ -1,7 +1,8 @@
-const convertToMessage = (text) => {
+const convertToMessage = (text, username) => {
     return {
         text,
-        time: new Date().getTime()
+        time: new Date().getTime(),
+        username: username || 'Admin Chat App'
     }
 }
 

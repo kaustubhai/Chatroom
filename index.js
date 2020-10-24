@@ -18,33 +18,45 @@ app.use(express.static(path.join(__dirname, 'public')))
 io.on('connect', (socket) => {
     console.log('Socket connected')
 
-    socket.on('join', (qs) => {
-        const { user, error } = addUser({ id: socket.id, username, roomname })
-        
-        
+    socket.on('join', (qs, cb) => {
+        const user = addUser({ id: socket.id, username: qs.username, roomname: qs.roomname })
+        if (user.error)
+            cb(user.error);
+        socket.join(user.roomname)
+        socket.broadcast.to(user.roomname).emit('recieved', convertToMessage(`${user.username} has joined the chat`))
 
-
-
-        socket.join(qs.roomname)
-        socket.broadcast.to(qs.roomname).emit('recieved', convertToMessage(`${qs.username} has joined the chat`))
+        io.to(user.roomname).emit('roomData', {
+            roomname: user.roomname,
+            users: getUsersInRoom(user.roomname)
+        })
     })
 
     socket.on('newMessage', (message, cb) => {
+        const user = getUser(socket.id)
         const filter = new Filter();
         if (filter.isProfane(message))
-            socket.emit('botMsg', convertToMessage('Profanity is not allowed'))
+            socket.emit('recieved', convertToMessage('Profanity is not allowed'))
         else
-            io.emit('recieved', convertToMessage(message))
+            io.to(user.roomname).emit('recieved', convertToMessage(message, user.username))
         cb('Delivered')
     })
 
     socket.on('locationCords', (latitude, longitude, cb) => {
-        io.emit('loc', `https://google.co.in/maps?q=${latitude},${longitude}`)
+        const user = getUser(socket.id)
+        io.to(user.roomname).emit('loc', convertToMessage(`https://google.co.in/maps?q=${latitude},${longitude}`, user.username))
         cb()
     })
 
     socket.on('disconnect', () => {
-        socket.broadcast.emit('recieved', convertToMessage('A User disconnected'))
+        const user = removeUser(socket.id)
+        if(user){
+            io.to(user.roomname).emit('recieved', convertToMessage(`${user.username} disconnected`))
+
+            io.to(user.roomname).emit('roomData', {
+                roomname: user.roomname,
+                users: getUsersInRoom(user.roomname)
+            })
+        }
     })
 })
 

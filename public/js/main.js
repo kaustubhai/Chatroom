@@ -6,30 +6,62 @@ const $msg = document.getElementById('message')
 const $but = document.getElementById('submitButton')
 const $loc = document.getElementById('send-location')
 const $msgs = document.getElementById('messages')
+const $side = document.getElementById('sidebar')
 //templates
 const $msgTemplate = document.getElementById('message-template').innerHTML;
 const $locTemplate = document.getElementById('location-template').innerHTML;
+const $sidTemplate = document.getElementById('sidebar-template').innerHTML;
 //queries
 const qs = Qs.parse(location.search, { ignoreQueryPrefix: true });
 
-socket.on('botMsg', (msg) => {
-    console.log(msg.text, 'at', msg.time)
-})
+const autoscroll = () => {
+    // //latest message
+    // $newMsg = $msgs.lastElementChild
+
+    // //height of the new message
+    // const $newMsgStyles = getComputedStyle($newMsg)
+    // const $newMsgMargin = parseInt($newMsgStyles.marginBottom)
+    // const $newMsgHeight = $newMsg.offsetHeight + $newMsgMargin
+
+    // //visible height
+    // const $visible = $msgs.offsetHeight
+
+    // //height of the container of msgs
+    // const $container = $msgs.scrollHeight
+
+    // //scrolled height
+    // const $scrollOffset = $msgs.scrollTop + $visible
+
+    // if ($container - $newMsgHeight <= $scrollOffset)
+    $msgs.scrollTop = $msgs.scrollHeight
+}
 
 socket.on('recieved', (message) => {
     const html = Mustache.render($msgTemplate, {
+        username: message.username,
         message: message.text,
         createdAt: moment(message.time).format('HH:MM')
     })
     $msgs.insertAdjacentHTML('beforeend', html)
+    autoscroll()
 })
 
 socket.on('loc', (locationMessage) => {
     const html = Mustache.render($locTemplate, {
-        locationMessage
+        username: locationMessage.username,
+        locationMessage,
+        createdAt: moment(locationMessage.time).format('HH:MM')
     })
     $msgs.insertAdjacentHTML('beforeend', html)
-    console.log(qs)
+    autoscroll()
+})
+
+socket.on('roomData', (roomData) => {
+    const html = Mustache.render($sidTemplate, {
+        room: roomData.roomname,
+        users: roomData.users
+    })
+    $side.innerHTML = html
 })
 
 $form.addEventListener('submit', (e) => {
@@ -55,4 +87,7 @@ $loc.addEventListener('click', () => {
     })
 })
 
-socket.emit('join', qs)
+socket.emit('join', qs, (error) => {
+    alert(error)
+    location.href = '/'
+})
